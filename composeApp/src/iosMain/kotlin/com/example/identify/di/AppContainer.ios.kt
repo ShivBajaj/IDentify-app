@@ -1,4 +1,4 @@
-package com.example.identify.data.di
+package com.example.identify.di
 
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.darwin.Darwin

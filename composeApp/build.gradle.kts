@@ -1,4 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -48,7 +47,7 @@ kotlin {
             implementation(libs.androidx.camera.view)
 
             // ML Kit Barcode Scanning
-            implementation("com.google.mlkit:barcode-scanning:17.2.0")
+            implementation("com.google.mlkit:barcode-scanning:17.3.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -57,9 +56,10 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(compose.materialIconsExtended)
+
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.androidx.lifecycle.runtime.compose)
 
             implementation(libs.bundles.ktor)
 
@@ -72,17 +72,13 @@ kotlin {
             implementation("dev.icerock.moko:permissions-gallery:0.19.1")
 
             //compose-navigation
-            implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.0-beta05")
-
-            //coil
-            implementation("media.kamel:kamel-image:0.9.5")
+            implementation(libs.jetbrains.compose.navigation)
 
         }
 
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
 
-            //camera
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

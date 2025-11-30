@@ -19,7 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.identify.data.di.AppContainer
+import com.example.identify.di.AppContainer
 import com.example.identify.presentation.VerifyQR.VerifyQrScreen
 import com.example.identify.presentation.auth.AuthViewModel
 import com.example.identify.presentation.auth.CurrentRole
@@ -44,7 +44,7 @@ fun App() {
 
         BindEffect(controller)
 
-        val permissionsViewModel = viewModel {
+        val permissionsViewModel: PermissionsViewModel = viewModel{
             PermissionsViewModel(controller)
         }
 
@@ -55,7 +55,7 @@ fun App() {
 
         val navController = rememberNavController()
 
-        val authViewModel = viewModel<AuthViewModel>{
+        val authViewModel: AuthViewModel = viewModel{
             AuthViewModel(authRepository = AppContainer.authRepository)
         }
 
@@ -81,8 +81,6 @@ fun App() {
             }
         )
         {
-//
-
             Box (
                 modifier = Modifier.fillMaxSize()
             ){
@@ -94,6 +92,7 @@ fun App() {
 
 
                     composable(Routes.LOGIN.name) {
+
                         LoginScreen(
                             viewModel = authViewModel,
                             { navController.navigate(Routes.STUDENT.name) },

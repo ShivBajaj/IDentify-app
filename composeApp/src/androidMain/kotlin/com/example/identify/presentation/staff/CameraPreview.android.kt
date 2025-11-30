@@ -91,9 +91,6 @@ actual fun CameraPreview(
                                 )
                                 image.close()
                             }
-                            override fun onError(exception: ImageCaptureException) {
-                                // Handle error properly here
-                            }
                         }
                     )
                 },

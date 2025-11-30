@@ -2,11 +2,8 @@ package com.example.identify.presentation.student
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.identify.data.di.AppContainer
 import com.example.identify.data.model.StudentDetailsResponse
 import com.example.identify.data.repository.StudentRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

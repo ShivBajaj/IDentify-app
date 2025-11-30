@@ -28,114 +28,136 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.identify.data.di.AppContainer
-import org.jetbrains.compose.ui.tooling.preview.Preview
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Preview
 fun LoginScreen(
     viewModel: AuthViewModel,
-    goToStudentScreen: ()-> Unit,
-    goToStaffScreen: ()-> Unit,
+    goToStudentScreen: () -> Unit,
+    goToStaffScreen: () -> Unit,
     modifier: Modifier = Modifier
-){
-
+) {
     val state by viewModel.authState.collectAsState()
     val otpState by viewModel.otpState.collectAsState()
     val currentRole by viewModel.currentRole.collectAsState()
 
+    val username by viewModel.username.collectAsState()
+    val password by viewModel.password.collectAsState()
+    val otp by viewModel.otp.collectAsState()
+    val selectedRole by viewModel.selectedRole.collectAsState()
+
     var expanded by remember { mutableStateOf(false) }
     val roles = listOf("Student", "Staff")
-    var selectedRole by remember { mutableStateOf(roles[0]) }
 
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var otp by remember { mutableStateOf("") }
+    val otpSent: Boolean = otpState?.isSuccess == true
 
-    val focusManager = LocalFocusManager.current
 
-    // Track OTP sent state based on actual API response
-    var otpSent: Boolean = otpState?.isSuccess == true
+    val usernameFocus = remember { FocusRequester() }
+    val passwordFocus = remember { FocusRequester() }
+    val otpFocus = remember { FocusRequester() }
+    val roleFocus = remember { FocusRequester() }
 
-    Box (
-        modifier = Modifier
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    Box(
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         contentAlignment = Alignment.Center
-    ){
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.Center
         ) {
-
+            // Username/Email
             OutlinedTextField(
                 value = username,
-                onValueChange = { username = it },
-                placeholder = {
-                    Text(if (selectedRole == roles[0]) "Email" else "Username")
-                },
+                onValueChange = { viewModel.onUsernameChange(it) },
+                placeholder = { Text(if (selectedRole == "Student") "Email" else "Username") },
                 enabled = state !is AuthState.Loading,
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next
+                ),
                 keyboardActions = KeyboardActions(
-                    onDone = {
-                        when {
-                            selectedRole == roles[0] && !otpSent -> {
-                                viewModel.sendOtp(email = username)
-                            }
-                            else -> {
-                                focusManager.moveFocus(FocusDirection.Down)
-                            }
+                    onNext = {
+                        if (selectedRole == "Staff") {
+                            passwordFocus.requestFocus()
+                        } else if (selectedRole == "Student" && username.isNotEmpty()) {
+                            viewModel.sendOtp(email = username)
+                            otpFocus.requestFocus()
+                        } else {
+                            roleFocus.requestFocus()
                         }
                     }
                 ),
+                textStyle = TextStyle(fontFamily = FontFamily.Default),
                 modifier = Modifier.fillMaxWidth()
+                    .focusRequester(usernameFocus)
             )
 
-            AnimatedVisibility(selectedRole == roles[1]){
+            AnimatedVisibility(selectedRole == "Staff") {
                 OutlinedTextField(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = { viewModel.onPasswordChange(it) },
                     placeholder = { Text("Password") },
                     enabled = state !is AuthState.Loading,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Password
+                    ),
                     keyboardActions = KeyboardActions(
                         onDone = {
-                                    viewModel.staffLogin(username = username, password = password)
+                            if (username.isNotEmpty() && password.isNotEmpty()) {
+                                viewModel.staffLogin(username, password)
+                                keyboardController?.hide()
+                            }
                         }
                     ),
+                    textStyle = TextStyle(fontFamily = FontFamily.Default),
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
+                        .padding(top = 16.dp)
+                        .focusRequester(passwordFocus)
                 )
             }
 
-            AnimatedVisibility(otpSent && selectedRole == roles[0]){
+            // OTP (for students after OTP sent)
+            AnimatedVisibility(otpSent && selectedRole == "Student") {
                 OutlinedTextField(
                     value = otp,
-                    onValueChange = { otp = it },
+                    onValueChange = { viewModel.onOtpChange(it) },
                     placeholder = { Text("Enter OTP") },
                     enabled = state !is AuthState.Loading,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
                     ),
                     keyboardActions = KeyboardActions(
                         onDone = {
-                            viewModel.verifyOtp(email = username, otp = otp)
+                            if (username.isNotEmpty() && otp.isNotEmpty()) {
+                                viewModel.verifyOtp(email = username, otp = otp)
+                                keyboardController?.hide()
+                            }
                         }
                     ),
+                    textStyle = TextStyle(fontFamily = FontFamily.Default),
                     modifier = Modifier.fillMaxWidth()
+                        .padding(top = 16.dp)
+                        .focusRequester(otpFocus)
                 )
             }
 
+            // Role selection
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }
@@ -149,11 +171,15 @@ fun LoginScreen(
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                     },
                     enabled = state !is AuthState.Loading,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                    ),
                     modifier = Modifier
                         .menuAnchor()
                         .fillMaxWidth()
+                        .padding(top = 16.dp)
                 )
-
                 ExposedDropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
@@ -162,40 +188,32 @@ fun LoginScreen(
                         DropdownMenuItem(
                             text = { Text(role) },
                             onClick = {
-                                selectedRole = role
+                                viewModel.onRoleChange(role)
                                 expanded = false
-                                // Reset states when role changes
-                                username = ""
-                                password = ""
-                                otp = ""
                             }
                         )
                     }
                 }
             }
 
+            // Button
             Button(
                 onClick = {
                     when {
-                        selectedRole == roles[0] && !otpSent -> {
-                            viewModel.sendOtp(email = username)
-                        }
-                        selectedRole == roles[0] && otpSent -> {
-                            viewModel.verifyOtp(email = username, otp = otp)
-                        }
-                        selectedRole == roles[1] -> {
-                            viewModel.staffLogin(username = username, password = password)
-                        }
+                        selectedRole == "Student" && !otpSent -> viewModel.sendOtp(email = username)
+                        selectedRole == "Student" && otpSent -> viewModel.verifyOtp(email = username, otp = otp)
+                        selectedRole == "Staff" -> viewModel.staffLogin(username, password)
                     }
                 },
                 enabled = state !is AuthState.Loading && when {
-                    selectedRole == roles[0] && !otpSent -> username.isNotEmpty()
-                    selectedRole == roles[0] && otpSent -> username.isNotEmpty() && otp.isNotEmpty()
-                    selectedRole == roles[1] -> username.isNotEmpty() && password.isNotEmpty()
+                    selectedRole == "Student" && !otpSent -> username.isNotEmpty()
+                    selectedRole == "Student" && otpSent -> username.isNotEmpty() && otp.isNotEmpty()
+                    selectedRole == "Staff" -> username.isNotEmpty() && password.isNotEmpty()
                     else -> false
                 },
                 modifier = Modifier.fillMaxWidth()
-            ){
+                    .padding(top = 16.dp)
+            ) {
                 if (state is AuthState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
@@ -204,15 +222,15 @@ fun LoginScreen(
                 } else {
                     Text(
                         when {
-                            selectedRole == roles[0] && !otpSent -> "Send OTP"
-                            selectedRole == roles[0] && otpSent -> "Verify OTP"
+                            selectedRole == "Student" && !otpSent -> "Send OTP"
+                            selectedRole == "Student" && otpSent -> "Verify OTP"
                             else -> "Login"
                         }
                     )
                 }
             }
 
-            // Show error messages
+            // Errors
             if (state is AuthState.Error) {
                 Text(
                     text = (state as AuthState.Error).message,
@@ -222,18 +240,13 @@ fun LoginScreen(
             }
         }
 
+        // Navigation
         LaunchedEffect(currentRole) {
             when (currentRole) {
-                CurrentRole.STUDENT -> {
-                    otpSent = false
-                    goToStudentScreen()
-                }
-                CurrentRole.STAFF -> {
-                    goToStaffScreen()
-                }
+                CurrentRole.STUDENT -> goToStudentScreen()
+                CurrentRole.STAFF -> goToStaffScreen()
                 else -> {}
             }
         }
     }
 }
-

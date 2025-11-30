@@ -28,6 +28,29 @@ class AuthViewModel(
     private val authRepository: AuthRepository,
 ): ViewModel(){
 
+    private val _username = MutableStateFlow("")
+    val username: StateFlow<String> = _username
+
+    private val _password = MutableStateFlow("")
+    val password: StateFlow<String> = _password
+
+    private val _otp = MutableStateFlow("")
+    val otp: StateFlow<String> = _otp
+
+    private val _selectedRole = MutableStateFlow("Student")
+    val selectedRole: StateFlow<String> = _selectedRole
+
+    // Update functions
+    fun onUsernameChange(newValue: String) { _username.value = newValue }
+    fun onPasswordChange(newValue: String) { _password.value = newValue }
+    fun onOtpChange(newValue: String) { _otp.value = newValue }
+    fun onRoleChange(newValue: String) {
+        _selectedRole.value = newValue
+        _username.value = ""
+        _password.value = ""
+        _otp.value = ""
+    }
+
     private val _currentRole = MutableStateFlow<CurrentRole>(CurrentRole.LOGGED_OUT)
     val currentRole: StateFlow<CurrentRole> = _currentRole
 

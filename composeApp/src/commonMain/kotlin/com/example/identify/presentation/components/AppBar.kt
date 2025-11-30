@@ -29,7 +29,7 @@ fun AppBar(
             IconButton(
                 onClick = logOut
             ) {
-                Icon(Icons.Default.Logout, contentDescription = "Back")
+                Icon(Icons.Default.Logout, contentDescription = "Log out")
             }
         },
 

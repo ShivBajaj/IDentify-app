@@ -1,4 +1,4 @@
-package com.example.identify.data.di
+package com.example.identify.di
 
 import com.example.identify.data.network.InMemoryTokenStorage
 import com.example.identify.data.network.TokenStorage
